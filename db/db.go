@@ -1,13 +1,13 @@
 package db
 
 import(
-	"net/http"
     "log"
     "database/sql"
 	_ "github.com/lib/pq"
-	"github.com/jyl/Tasks/type"
+    myTypes "github.com/jyl/golang-TodoList/type"
     "time"
 )
+
 /**
 *
 docker run -p 5432:5432 --name postgres_db -v postgres-volume:/var/lib/postgresql/data -d postgres
@@ -26,9 +26,9 @@ sql.DB object performs tasks for you behind the scenes:
 var database *sql.DB 
 var err error
 
-func GetTasks() Context {
-    var task []Task
-    var context Context
+func GetTasks() myTypes.Context {
+    var task []myTypes.Task
+    var context myTypes.Context
     var TaskID int
     var TaskTitle string
     var TaskContent string
@@ -49,23 +49,29 @@ func GetTasks() Context {
             log.Fatal(err)
         }
         TaskCreated = TaskCreated.Local()
-        a := Task{Id: TaskID, Title: TaskTitle, Content: TaskContent,
-                    Created: TaskCreated.Format(time.UnixDate)[0:20]}
+        log.Println("ts: ", TaskCreated)
+        a := myTypes.Task{Id: TaskID, Title: TaskTitle, Content: TaskContent,
+                    Created: TaskCreated.String()}
         task = append(task, a)
     }
-    context = Context{Tasks: task}
+    context = myTypes.Context{Tasks: task}
     return context
 }
 
 func AddTask(title string, content string) error {
-    query:="insert into task(title, content, created_date, last_modified_at) values(?,?,datetime(), datetime())"
+    log.Println("Adding Task...")
+    query:="insert into task(title, content, created_date, last_modified_at) values($1,$2,now(), now())"
     restoreSQL, err := database.Prepare(query)
+    log.Println("Adding Task... sql is done prepared query: "+query)
     if err != nil {
         log.Fatal(err)
     }
     tx, err := database.Begin()
+    log.Println("Adding Task... Beginning tx")
     _, err = tx.Stmt(restoreSQL).Exec(title, content)
     if err != nil {
+        log.Println("Adding Task... insert not complete")
+
         log.Fatal(err)
         tx.Rollback()
     } else {
@@ -75,9 +81,13 @@ func AddTask(title string, content string) error {
     return err
 }
 
+func Close() {
+    database.Close()
+}
+
 func init() {
     
-    connStr := "host=142.93.159.74 user=postgres password=ggininder87 dbname=golang sslmode=disable"
+    connStr := "host=localhost user=golang password=golang dbname=golang sslmode=disable"
     database, err = sql.Open("postgres", connStr)
     
 	if err != nil {

@@ -3,11 +3,12 @@ package main
 import(
 	"net/http"
     "log"
-    "database/sql"
+    "encoding/json"
+    // "database/sql"
     _ "github.com/lib/pq"
-    "github.com/jyl/Tasks/db"
-    "github.com/jyl/Tasks/type"
-    "time"
+    myDB "github.com/jyl/golang-TodoList/db"
+    // myTypes "github.com/jyl/golang-TodoList/type"
+    // "time"
 )
 
 
@@ -21,8 +22,14 @@ var err error
 func ShowAllTasksFunc(w http.ResponseWriter, r *http.Request) {
 	
 	if r.Method == "GET" {
-        context := GetTasks()
-        w.Write([]byte(context.Tasks[0].Title))
+        context := myDB.GetTasks()
+        contextJson, err := json.Marshal(context.Tasks)
+        if err != nil {
+            log.Fatal(err)
+        }
+        w.Header().Set("Content-type", "application/json")
+        w.WriteHeader(http.StatusOK)
+        w.Write(contextJson)
 	} else {
 		http.Redirect(w, r, "/", http.StatusFound)
 	}
@@ -34,7 +41,7 @@ func ShowAllTasksFunc(w http.ResponseWriter, r *http.Request) {
 func AddTaskFunc(w http.ResponseWriter, r *http.Request) {
     title := "random title"
     content := "random content"
-    truth := AddTask(title, content)
+    truth := myDB.AddTask(title, content)
     if truth != nil {
         log.Fatal("Error adding task")
     }
@@ -62,7 +69,7 @@ func main() {
     // http.HandleFunc("/add_user", PostAddUser)
     // http.HandleFunc("/change", PostChange)
     // http.HandleFunc("/logout", HandleLogout)
-    defer database.Close()
+    defer myDB.Close()
     http.HandleFunc("/add/", AddTaskFunc)
     http.HandleFunc("/", ShowAllTasksFunc)
 
