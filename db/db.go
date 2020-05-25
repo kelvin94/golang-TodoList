@@ -83,6 +83,7 @@ func AddTask(title string, content string) error {
 
 func Close() {
     database.Close()
+    log.Println("DB connection is closed")
 }
 
 func init() {

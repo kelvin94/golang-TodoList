@@ -1,0 +1,23 @@
+
+<!DOCTYPE html>
+<html>
+    <body>
+       
+        <div class="timeline">
+            {{ if .Tasks}} 
+                {{range .Tasks}}
+                    <div class="note">
+                    <p class="noteHeading">{{.Title}}</p>
+                    <hr>
+                    <p class="noteContent">{{.Content}}</p>
+                    </div>
+                {{end}} 
+            {{else}}
+                <div class="note">
+                    <p class="noteHeading">No Tasks here</p>
+                    <p class="notefooter">Create new task<button> here </button> </p>
+                </div>
+            {{end}}
+        </div> 
+    </body>
+</html>
