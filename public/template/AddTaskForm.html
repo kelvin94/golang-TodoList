@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Page Title</title>
+<style>
+body {
+  text-align: center;
+  color: white;
+  font-family: Arial, Helvetica, sans-serif;
+}
+#label-text {
+    color: black
+}
+</style>
+</head>
+<body>
+<div id="todo-app">
+    <form method="POST" action="/add/">
+            <label class="todo-label" for="new-todo" id="label-text">What do you want to do today?</label>
+            <input type="text" name="task-title" id="new-todo" class="todo-input" placeholder="buy milk">
+            <input type="text" name="task-content" id="new-todo" class="todo-input" placeholder="buy milkkkkkkk">
+            <input type="submit" value="submit" />
+
+    </form>
+   
+</div>
+</body>
+</html>

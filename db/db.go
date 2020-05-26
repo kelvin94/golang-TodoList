@@ -26,6 +26,26 @@ sql.DB object performs tasks for you behind the scenes:
 var database *sql.DB 
 var err error
 
+func DeleteTask(taskId int) error {
+    query := "delete from task where id=$1"
+    restoreSQL, err := database.Prepare(query)
+    log.Println("DeleteTask... sql is done prepared query: "+query)
+    if err != nil {
+        log.Fatal(err)
+    }
+    tx, err := database.Begin()
+    _, err = tx.Stmt(restoreSQL).Exec(taskId)
+    if err != nil {
+
+        log.Fatal(err)
+        tx.Rollback()
+    } else {
+        log.Println("Delete task success")
+        tx.Commit()
+    }
+    return err
+}
+
 func GetTasks() myTypes.Context {
     var task []myTypes.Task
     var context myTypes.Context
@@ -35,7 +55,7 @@ func GetTasks() myTypes.Context {
     var TaskCreated time.Time
     var getTasksql string
 
-    getTasksql = "select id, title, content, created_date from task;"
+    getTasksql = "select id, title, content, created_date from task order by created_date asc;"
 
     rows, err := database.Query(getTasksql)
     if err != nil {
@@ -58,19 +78,37 @@ func GetTasks() myTypes.Context {
     return context
 }
 
-func AddTask(title string, content string) error {
-    log.Println("Adding Task...")
-    query:="insert into task(title, content, created_date, last_modified_at) values($1,$2,now(), now())"
+func EditTask( taskId int, title string, content string) error {
+    query := "update task set title = $1, content = $2 where id = $3;"
     restoreSQL, err := database.Prepare(query)
-    log.Println("Adding Task... sql is done prepared query: "+query)
+    log.Println("Editing Task... sql is done prepared query: "+query)
     if err != nil {
         log.Fatal(err)
     }
     tx, err := database.Begin()
-    log.Println("Adding Task... Beginning tx")
+    _, err = tx.Stmt(restoreSQL).Exec(title, content, taskId)
+    if err != nil {
+
+        log.Fatal(err)
+        tx.Rollback()
+    } else {
+        log.Println("Update DB success")
+        tx.Commit()
+    }
+    return err
+
+}
+
+func AddTask(title string, content string) error {
+    log.Println("Adding Task...")
+    query:="insert into task(title, content, created_date, last_modified_at) values($1,$2,now(), now())"
+    restoreSQL, err := database.Prepare(query)
+    if err != nil {
+        log.Fatal(err)
+    }
+    tx, err := database.Begin()
     _, err = tx.Stmt(restoreSQL).Exec(title, content)
     if err != nil {
-        log.Println("Adding Task... insert not complete")
 
         log.Fatal(err)
         tx.Rollback()

@@ -1,15 +1,25 @@
 
 <!DOCTYPE html>
 <html>
+    <head>
+            <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    </head>
     <body>
+       <button  onclick="window.location.href='/add'">Add Task</button>
        
         <div class="timeline">
             {{ if .Tasks}} 
                 {{range .Tasks}}
+                    
                     <div class="note">
+                    <p class="noteContent">{{.Id}}</p>
+
                     <p class="noteHeading">{{.Title}}</p>
-                    <hr>
+                    
                     <p class="noteContent">{{.Content}}</p>
+                    <a href="/edit/{{ .Id }}"><button >Edit Task</button></a>
+                    <button class="delete-btn" id="{{.Id}}">Delete Task</button>
+                    <hr>
                     </div>
                 {{end}} 
             {{else}}
@@ -21,3 +31,25 @@
         </div> 
     </body>
 </html>
+<script type="text/javascript">
+$(document).ready(function()
+    {
+        $(".delete-btn").click(function()
+        {
+            var del_id = $(this).attr('id');
+            console.log("del id "+del_id);
+            $.ajax({
+                method:'DELETE',
+                url:'/task',
+                data: JSON.stringify({task_id: del_id}),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function(data)
+                {
+                        console.log(data);
+                        window.location='/';
+                }
+            });
+        });
+    });
+</script>
