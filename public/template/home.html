@@ -40,7 +40,7 @@ $(document).ready(function()
             console.log("del id "+del_id);
             $.ajax({
                 method:'DELETE',
-                url:'/task',
+                url:'/delete',
                 data: JSON.stringify({task_id: del_id}),
                 contentType: "application/json; charset=utf-8",
                 dataType: "json",

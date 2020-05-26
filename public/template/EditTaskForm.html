@@ -17,7 +17,7 @@ body {
 <div id="todo-app">
     {{$taskID := .}}
 
-    <form method="POST" action="/task">
+    <form method="POST" action="/edit/{{$taskID}}">
             <label class="todo-label" for="new-todo" id="label-text">What do you want to EDIT today?</label>
             <input type="text" name="task-id" value = "{{$taskID}}" hidden>
 
@@ -29,4 +29,5 @@ body {
    
 </div>
 </body>
+
 </html>
