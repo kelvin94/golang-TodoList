@@ -123,6 +123,25 @@ func (repo TaskRepository) AddTask(title string, content string) error {
     return err
 }
 
+
+func (repo TaskRepository) DeleteNews(taskId int, title string) error {
+    query:="delete from news where title = $1 and taskid=$2;"
+    restoreSQL, err := repo.db.Prepare(query)
+    if err != nil {
+        log.Fatal(err)
+    }
+    tx, err := repo.db.Begin()
+    _, err = tx.Stmt(restoreSQL).Exec(title, taskId)
+    if err != nil {
+        log.Fatal(err)
+        tx.Rollback()
+    } else {
+        log.Println("Delete DB success")
+        tx.Commit()
+    }
+    return err
+}
+
 func (repo TaskRepository) AddNews(taskId int, title string, url string) error {
     query:="insert into news(title, url, taskId) values($1, $2, $3);"
     restoreSQL, err := repo.db.Prepare(query)

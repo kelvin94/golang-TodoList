@@ -3,12 +3,14 @@
 <html>
     <head>
             <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+            
             <style>
                 .markedNews{ border: 3px; border-color: aquamarine; border-style: solid}
                 ul {border: 3px; border-color: burlywoodl;  border-style: solid}
             </style>
     </head>
     <body>
+        
        <button  onclick="window.location.href='/add'">Add Task</button>
        
         <div class="timeline">
@@ -42,8 +44,9 @@
                         <div class="markedNews">
                             <h3>The news you have marked to read later</h5>
                             {{range $task.News}}
-                                <p>Story Title: {{.Title}}</p>
+                                <p id="{{.Title}}">Story Title: {{.Title}}</p>
                                 <a href="{{.Url}}" target="_blank">Link</a>
+                                <button class="delete-marked-story-button" id="{{$task.Id}}">Delete This Marked Story</button>
                             {{end}}
                         </div>
                     {{end}}
@@ -55,11 +58,18 @@
                 </div>
             {{end}}
         </div> 
+
     </body>
 </html>
+
 <script type="text/javascript">
+
+
+
+
 $(document).ready(function()
     {
+        
         $(".delete-btn").click(function()
         {
             var del_id = $(this).attr('id');
@@ -71,10 +81,34 @@ $(document).ready(function()
                 dataType: "json",
                 success: function(data)
                 {
-                        console.log(data);
                         window.location='/';
                 }
             });
+        });
+
+        $(".delete-marked-story-button").click(function() {
+            var taskid = $(this).attr('id');
+            var title = $(this).prev().prev().attr('id');
+            console.log('delete-marked-story-button title - '+ title);
+            console.log('delete-marked-story-button taskid - '+ taskid);
+
+            $.ajax({
+                method:'DELETE',
+                url:'/api/task',
+                data: JSON.stringify({taskid: taskid, title: title}),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function(data)
+                {
+                    //Open the dialog box when the button is clicked.
+                    alert("success deleted " + data);
+                    window.location='/';
+
+
+                        
+                }
+            });
+
         });
 });
 
@@ -110,7 +144,6 @@ $(document).ready(function() {
                             });
                         }
 
-                        // window.location='/';
                         console.log(hmap)
                 }
         }).done(function(){

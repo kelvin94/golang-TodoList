@@ -17,8 +17,6 @@ var wg = sync.WaitGroup{}
 
 
 type Api struct {
-	In chan string
-	Out chan myType.News
 	Repo *myDB.TaskRepository
 }
 
@@ -27,7 +25,7 @@ func (api Api) ServeHTTP(w http.ResponseWriter, r *http.Request){
 	// GET URL: /api/task?title=someTitle
 	// POST URL: /api/task
 	// PUT URL: /api/task
-	// Delete URL: 
+	// Delete URL: /api/task
 	hnDataChan := make(chan []byte)
 	done := make(chan struct{},50)
 	newsChan := make(chan myType.News,50)
@@ -36,10 +34,8 @@ func (api Api) ServeHTTP(w http.ResponseWriter, r *http.Request){
 			api.get(w, r, hnDataChan, done, newsChan)
 		case http.MethodPost:
 			api.post(w,r)
-		case http.MethodPut:
-			w.Write([]byte("put"))
 		case http.MethodDelete:
-			w.Write([]byte("del"))
+			api.delete(w,r)
 		default:
 			log.Fatal("A request with unexpected HTTP method: ", r)
 		
@@ -47,10 +43,53 @@ func (api Api) ServeHTTP(w http.ResponseWriter, r *http.Request){
 	
 }
 
+func (api Api) delete(w http.ResponseWriter, req *http.Request) {
+	d := json.NewDecoder(req.Body)
+	d.DisallowUnknownFields() // catch unwanted fields
+
+	t := struct {
+		// pointer so we can test for field absence
+		Title *string `json:"title"`
+		TaskId *string `json:"taskId"`
+	}{}
+
+	err := d.Decode(&t)
+	if err != nil {
+		// bad JSON or unrecognized json field
+		
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if t.Title == nil {
+		http.Error(w, "missing field 'title' from JSON object", http.StatusBadRequest)
+		return
+	} else if t.TaskId == nil {
+		http.Error(w, "missing field 'TaskId' from JSON object", http.StatusBadRequest)
+		return
+	}
+	taskId, er := strconv.Atoi(*t.TaskId)
+	if er != nil {
+		log.Fatal(er)
+	}
+	e := api.Repo.DeleteNews(taskId, *t.Title)
+	if e != nil {
+		log.Fatal(er)
+		http.Error(w, "DB insert news instance failed", http.StatusBadRequest)
+		return
+	}
+	jData, err := json.Marshal("success")
+	if err != nil {
+		// handle error
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jData)
+}
 
 
 func (api Api) post(w http.ResponseWriter, req *http.Request) {
-	log.Println("raw req.body", req.Body)
+
 	d := json.NewDecoder(req.Body)
 	d.DisallowUnknownFields() // catch unwanted fields
 
