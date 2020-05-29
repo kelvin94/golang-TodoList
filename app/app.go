@@ -74,6 +74,7 @@ func (myApp MyApp) DeleteTaskFunc(w http.ResponseWriter, r *http.Request) {
 	}
 	error := myApp.Repo.DeleteTask(taskID)
 	if error != nil {
+		log.Println("error not null")
 		log.Fatal(error)
 	}
 

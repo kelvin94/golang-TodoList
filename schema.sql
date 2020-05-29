@@ -30,20 +30,21 @@
     INSERT INTO "status" VALUES(3,'DELETED');
      
     --News
+    DROP TABLE IF EXISTS news;
     CREATE TABLE  IF NOT EXISTS news (
         id SERIAL UNIQUE,
-        title varchar(100),
-        url varchar(100)
-        taskId INT references task(id)
+        title varchar(200),
+        url varchar(200),
+        taskId INT references task(id),
+        FOREIGN KEY (taskId) REFERENCES task(id) ON DELETE CASCADE
     )
-    insert into news(title, url, taskId) values('ggg', 'https://google.com', 43);
-    --task
 
-     
-     
+
+    --task     
+    DROP TABLE IF EXISTS task CASCADE;
     CREATE TABLE  IF NOT EXISTS task (
         id SERIAL UNIQUE,
-        title varchar(100),
+        title varchar(300),
         content text,
         created_date timestamp,
         last_modified_at timestamp,
@@ -56,8 +57,8 @@
         hide int
     );
 
-    INSERT INTO "task" VALUES(1,'Publish on github','Publish the source of tasks and picsort on github','2015-11-12 15:30:59','2015-11-21 14:19:22','2015-11-17 17:02:18',3,1,1,NULL,1,0);
-    INSERT INTO "task" VALUES(4,'gofmtall','The idea is to run gofmt -w file.go on every go file in the listing, *Edit turns out this is is difficult to do in golang **Edit barely 3 line bash script. ','2015-11-12 16:58:31','2015-11-14 10:42:14','2015-11-13 13:16:48',3,1,1,NULL,1,0);
+    -- INSERT INTO "task" VALUES(1,'Publish on github','Publish the source of tasks and picsort on github','2015-11-12 15:30:59','2015-11-21 14:19:22','2015-11-17 17:02:18',3,1,1,NULL,1,0);
+    -- INSERT INTO "task" VALUES(4,'gofmtall','The idea is to run gofmt -w file.go on every go file in the listing, *Edit turns out this is is difficult to do in golang **Edit barely 3 line bash script. ','2015-11-12 16:58:31','2015-11-14 10:42:14','2015-11-13 13:16:48',3,1,1,NULL,1,0);
 
     CREATE TABLE  IF NOT EXISTS comments(
         id SERIAL UNIQUE,
