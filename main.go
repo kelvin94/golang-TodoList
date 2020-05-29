@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"github.com/jyl/golang-TodoList/db"
 	"github.com/jyl/golang-TodoList/app"
+	"github.com/jyl/golang-TodoList/api"
 	// "github.com/jyl/golang-TodoList/structs"
 
 	_ "github.com/lib/pq"
@@ -50,7 +51,9 @@ func main() {
     } else {
         log.Println("DBConnection success")
 	}
+
 	
+	http.Handle("/api/task", &api.Api{})
 	
 
 	
