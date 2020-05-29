@@ -6,6 +6,7 @@ import(
 	_ "github.com/lib/pq"
     myTypes "github.com/jyl/golang-TodoList/type"
     "time"
+
 )
 
 /**
@@ -104,7 +105,7 @@ func (repo TaskRepository) EditTask( taskId int, title string, content string) e
 }
 
 func (repo TaskRepository) AddTask(title string, content string) error {
-    log.Println("Adding Task...")
+
     query:="insert into task(title, content, created_date, last_modified_at) values($1,$2,now(), now())"
     restoreSQL, err := repo.db.Prepare(query)
     if err != nil {
@@ -122,21 +123,59 @@ func (repo TaskRepository) AddTask(title string, content string) error {
     return err
 }
 
+func (repo TaskRepository) AddNews(taskId int, title string, url string) error {
+    query:="insert into news(title, url, taskId) values($1, $2, $3);"
+    restoreSQL, err := repo.db.Prepare(query)
+    if err != nil {
+        log.Fatal(err)
+    }
+    tx, err := repo.db.Begin()
+    _, err = tx.Stmt(restoreSQL).Exec(title, url, taskId)
+    if err != nil {
+        log.Fatal(err)
+        tx.Rollback()
+    } else {
+        log.Println("Insert DB success")
+        tx.Commit()
+    }
+    return err
+}
+
+func (repo TaskRepository) GetNewsByTaskId(taskId int) []myTypes.News {
+    
+    
+    query:="select title, url from news where taskid=$1"
+
+    log.Println("taskId", taskId)
+
+    rows, err := repo.db.Query(query, taskId)
+    if err != nil {
+        log.Println(err)
+    }
+    defer rows.Close()
+    var Url string
+    var Title string
+    var news []myTypes.News
+    log.Println("rows", rows)
+    if rows != nil {
+
+        for rows.Next() {
+            err := rows.Scan(&Title, &Url) // rows.Scan() scans result sets one row at a time and read the columns in each row into variables
+            if err != nil {
+                log.Fatal(err)
+            }
+    
+            
+            a := myTypes.News{TaskId: taskId, Title: Title, Url: Url}
+            news = append(news, a)
+        }
+    }
+    return news
+}
+
+
 func (repo TaskRepository) Close() {
     repo.db.Close()
     log.Println("DB connection is closed")
 }
 
-// func init() {
-    // 
-    // connStr := "host=localhost user=golang password=golang dbname=golang sslmode=disable"
-    // database, err = sql.Open("postgres", connStr)
-    
-	// if err != nil {
-	// 	log.Fatal(err)
-    // } else {
-    //     log.Println("DBConnection success")
-    // }
-    // 
-    // 
-// }

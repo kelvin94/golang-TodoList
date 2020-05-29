@@ -29,7 +29,14 @@
     INSERT INTO "status" VALUES(2,'PENDING');
     INSERT INTO "status" VALUES(3,'DELETED');
      
-
+    --News
+    CREATE TABLE  IF NOT EXISTS news (
+        id SERIAL UNIQUE,
+        title varchar(100),
+        url varchar(100)
+        taskId INT references task(id)
+    )
+    insert into news(title, url, taskId) values('ggg', 'https://google.com', 43);
     --task
 
      

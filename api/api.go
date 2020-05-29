@@ -5,20 +5,21 @@ import(
 	"net/http"
 	"strings"
 	"encoding/json"
+	myDB "github.com/jyl/golang-TodoList/db"
+	myType "github.com/jyl/golang-TodoList/type"
     "fmt"
 	"io/ioutil"
+	"strconv"
 	"sync"
 )
 
 var wg = sync.WaitGroup{}
-type News struct {
-	Title string
-	Url string
-}
+
 
 type Api struct {
 	In chan string
-	Out chan News
+	Out chan myType.News
+	Repo *myDB.TaskRepository
 }
 
 func (api Api) ServeHTTP(w http.ResponseWriter, r *http.Request){
@@ -29,12 +30,12 @@ func (api Api) ServeHTTP(w http.ResponseWriter, r *http.Request){
 	// Delete URL: 
 	hnDataChan := make(chan []byte)
 	done := make(chan struct{},50)
-	newsChan := make(chan News,50)
+	newsChan := make(chan myType.News,50)
 	switch r.Method {
 		case http.MethodGet:
 			api.get(w, r, hnDataChan, done, newsChan)
 		case http.MethodPost:
-			w.Write([]byte("post"))
+			api.post(w,r)
 		case http.MethodPut:
 			w.Write([]byte("put"))
 		case http.MethodDelete:
@@ -46,7 +47,53 @@ func (api Api) ServeHTTP(w http.ResponseWriter, r *http.Request){
 	
 }
 
-func (api Api) get(w http.ResponseWriter, r *http.Request, hnDataChan chan []byte,  done chan struct{}, newsChan chan News) {
+
+
+func (api Api) post(w http.ResponseWriter, req *http.Request) {
+	log.Println("raw req.body", req.Body)
+	d := json.NewDecoder(req.Body)
+	d.DisallowUnknownFields() // catch unwanted fields
+
+	t := struct {
+		// pointer so we can test for field absence
+		Title *string `json:"title"`
+		Url *string `json:"url"`
+		TaskId *string `json:"taskId"`
+	}{}
+
+	err := d.Decode(&t)
+	if err != nil {
+		// bad JSON or unrecognized json field
+		
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if t.Url == nil  {
+		http.Error(w, "missing field 'Url' from JSON object", http.StatusBadRequest)
+		return
+	} else if t.Title == nil {
+		http.Error(w, "missing field 'title' from JSON object", http.StatusBadRequest)
+		return
+	} else if t.TaskId == nil {
+		http.Error(w, "missing field 'TaskId' from JSON object", http.StatusBadRequest)
+		return
+	}
+	taskId, err := strconv.Atoi(*t.TaskId)
+	if err != nil {
+		log.Fatal(err)
+	}
+	er := api.Repo.AddNews(taskId, *t.Title, *t.Url)
+	if er != nil {
+		log.Fatal(er)
+		http.Error(w, "DB insert news instance failed", http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	
+}
+
+func (api Api) get(w http.ResponseWriter, r *http.Request, hnDataChan chan []byte,  done chan struct{}, newsChan chan myType.News) {
 	title := r.URL.Query()["title"]
 	hnApi := "https://hn.algolia.com/api/v1/search?query=" // Hacker News Api endpoint
 
@@ -57,9 +104,9 @@ func (api Api) get(w http.ResponseWriter, r *http.Request, hnDataChan chan []byt
 
 	runChannelListener(hnDataChan, done, newsChan, w)
 	wg.Add(1)  
-	go func(news chan News, w http.ResponseWriter, done chan struct{}) { // this is the receiving channel, 下面有个例子能够优化接收方，让接收方find out that the channel is closed 
+	go func(news chan myType.News, w http.ResponseWriter, done chan struct{}) { // this is the receiving channel, 下面有个例子能够优化接收方，让接收方find out that the channel is closed 
 		defer wg.Done()
-		var newsArr []News
+		var newsArr []myType.News
 		for n := range news { // LEARNED: because we rely on for range loop to listen on the NewsChannel, if NewsChannel is never closed, then this loop will be running forever, so that we need to close NewsChannel in the processHNApiData function to notify the goroutine "go func(news chan News, w http.ResponseWriter, done chan struct{})" that "News channel got no more data to send, end the for...range loop and carry on your task"
 			newsArr = append(newsArr, n)
 		}
@@ -83,7 +130,7 @@ func (api Api) get(w http.ResponseWriter, r *http.Request, hnDataChan chan []byt
 	wg.Wait()
 }
 
-func runChannelListener(hnDataChan chan []byte,  done chan struct{}, newsChan chan News, w http.ResponseWriter) {
+func runChannelListener(hnDataChan chan []byte,  done chan struct{}, newsChan chan myType.News, w http.ResponseWriter) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -124,7 +171,7 @@ type Data struct {
     MyKey []interface{} `json:"hits"`
 }
 
-func processHNApiData( msg []byte,  done chan struct{}, newsChan chan News) {
+func processHNApiData( msg []byte,  done chan struct{}, newsChan chan myType.News) {
 	
 	
 	var data Data
@@ -138,20 +185,21 @@ func processHNApiData( msg []byte,  done chan struct{}, newsChan chan News) {
 	for i, v := range data.MyKey {
 		switch x := v.(type) {
 			case map[string]interface{}:
-				t := fmt.Sprintf("%v", x["title"])
-				u := fmt.Sprintf("%v", x["url"])
-				
-				n := News{Title : t, Url: u}
-				log.Println( "formatted Object:", n)
-				
-				newsChan <- n
-				log.Println("sent to news channel")
+				if x["title"] != "" && x["title"] != nil && x["url"] != "" && x["url"] != nil {
+					t := fmt.Sprintf("%v", x["title"])
+					u := fmt.Sprintf("%v", x["url"])				
+	
+					if t != "" && len(t) > 0 && u != "" && len(u) > 0 {	
+					
+						n := myType.News{Title : t, Url: u}
+						newsChan <- n
+					}
+				}
 				
 			default:
 				log.Printf("%d. Unexpected value of type %T\n", i, v)
 		}
 	}
-	log.Println("processHNApiData is finished")
 	close(newsChan) // closing newsChannel when finishing sending data to the NewsChannel
 }
 

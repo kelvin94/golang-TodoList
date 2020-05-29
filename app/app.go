@@ -139,12 +139,14 @@ func (myApp MyApp) ShowAllTasksFunc(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
 		context := myApp.Repo.GetTasks()
-
 		// For each context.tasks, assign a goroutine to extract partial content
 		for i := 0; i < len(context.Tasks); i++ {
 			var task *myType.Task
 			task = &context.Tasks[i]
+			news := myApp.Repo.GetNewsByTaskId(task.Id)
 
+			task.News = news
+			
 			wg.Add(1)
 			go extractTaskFunc(task)
 		}
@@ -155,6 +157,7 @@ func (myApp MyApp) ShowAllTasksFunc(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 		// w.Header().Set("Content-type", "application/json") // FIXME: this line causes Browser to interpret the template as plain text instead of rendering the plain text as html code
+		log.Println("context", context)
 		w.WriteHeader(http.StatusOK)
 		// w.Write(contextJson)
 		homeTemplate.Execute(w, context)

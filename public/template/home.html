@@ -3,35 +3,50 @@
 <html>
     <head>
             <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+            <style>
+                .markedNews{ border: 3px; border-color: aquamarine; border-style: solid}
+                ul {border: 3px; border-color: burlywoodl;  border-style: solid}
+            </style>
     </head>
     <body>
        <button  onclick="window.location.href='/add'">Add Task</button>
        
         <div class="timeline">
             {{ if .Tasks}} 
-                {{range .Tasks}}
+                {{range $task := .Tasks}}
                 
                     <div>
                         <hr>
-                        <p class="noteContent">{{.Id}}</p>
+                        <p class="noteContent">{{$task.Id}}</p>
                         
-                        <p class="noteHeading">{{.Title}}</p>
+                        <p class="noteHeading">{{$task.Title}}</p>
                         
-                        <p class="noteContent">{{.Content}}</p>
+                        <p class="noteContent">{{$task.Content}}</p>
                         <a href="/edit/{{ .Id }}"><button >Edit Task</button></a>
                         <button class="delete-btn" id="{{.Id}}">Delete Task</button>
                         <button class="GetNews-btn" id="{{.Id}}" value="{{.Title}}">Get Hacker News Stories Based on Task Title</button>
-                        <ul  class="News-{{.Id}}" id="unorderList">
-                        {{ if .Task.News}}
-                            {{ range .Task.News }}
-                                {{ if .isMarked }}
-                                    <button>Marked to be read later</button>
-                                {{end}} 
-                        {{end}} 
+                        <button id="hide-button-{{.Id}}" style="display: none">Show/hide the stories we have found for you</button>
+                        <ul class="Parent-News-{{.Id}}" style="display: none">
+                            <li>
+                                Hacker News Stories that might help your daily task:
+                                <ul class="News-{{.Id}}" id="unorderList">
+                                    
+                                </ul>
+
+                            </li>
                         </ul>
                         
                        
                     </div>
+                    {{ if $task.News }}
+                        <div class="markedNews">
+                            <h3>The news you have marked to read later</h5>
+                            {{range $task.News}}
+                                <p>Story Title: {{.Title}}</p>
+                                <a href="{{.Url}}" target="_blank">Link</a>
+                            {{end}}
+                        </div>
+                    {{end}}
                 {{end}} 
             {{else}}
                 <div class="note">
@@ -67,21 +82,33 @@ $(document).ready(function()
 
 let hmap = new Map()
 
+
+
 $(document).ready(function() {
     $(".GetNews-btn").click(function() {
         var title = $(this).val(); 
-        var taskId = $(this).attr('id')
-        console.log("taskId "+taskId);
+        var taskId = $(this).attr('id');
+        console.log("ajax call title "+title);
+        if(!$("#hide-button-"+taskId).is(':visible')) {
+            $("#hide-button-"+taskId).toggle();
+        }
+        $("#hide-button-"+taskId).click(function() {
+
+            $(".Parent-News-"+taskId).toggle();
+        });
         $.ajax({
                 method:'GET',
                 url:'/api/task?title='+title,
                 success: function(data)
                 {
-                        console.log(data);
-                        $.each(data, function(k, v) {
-                            hmap[v.Title] = v.Url;
-                            $(".News-"+taskId).append("<li id=\""+taskId+"\">" + v.Title+"</li> <p>"+ v.Url +"</p> <button class=\"useful\">Useful? Mark it to read later</button>")
-                        });
+                        if($.trim(data)) {
+                            console.log(".trim(data)"+$.trim(data));
+                            $(".Parent-News-"+taskId).toggle();
+                            $.each(data, function(k, v) {
+                                hmap[v.title] = v.url;
+                                $(".News-"+taskId).append("<li id=\""+taskId+"\">" + v.title+"</li> <a href=\""+ v.url + "\"target=\"_blank\">Link</a> <button class=\"useful\">Useful? Mark it to read later</button>")
+                            });
+                        }
 
                         // window.location='/';
                         console.log(hmap)
@@ -90,12 +117,16 @@ $(document).ready(function() {
             $(document).ready(function() {
                 $('button.useful').on('click', function() {
                     var title = $(this).prev().prev().text();
+                    
                     var url = hmap[title]
                     console.log("url " + url);
                     $.ajax({
                         method:'POST',
                         url:'/api/task',
-                        data: JSON.stringify({taskId: taskId, url:url})
+                        data: JSON.stringify({taskId: taskId, title: title, url:url}),
+                        success: function(data) {
+                            window.location='/';
+                        }
                 })
                 });
             });

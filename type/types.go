@@ -7,12 +7,17 @@ type Task struct {
     Title   string
     Content string
     Created string
+    News       []News
 }
 
 //Context is the struct passed to templates
 type Context struct {
     Tasks      []Task
-    Navigation string
-    Search     string
-    Message    string
+    News       []News
+}
+
+type News struct {
+	Title string `json:"title"`
+    Url string `json:"url"`
+    TaskId int `json:"taskId"`
 }

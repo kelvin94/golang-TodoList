@@ -53,7 +53,7 @@ func main() {
 	}
 
 	
-	http.Handle("/api/task", &api.Api{})
+	http.Handle("/api/task", &api.Api{Repo : taskRepository})
 	
 
 	
