@@ -10,16 +10,27 @@
         <div class="timeline">
             {{ if .Tasks}} 
                 {{range .Tasks}}
-                    
-                    <div class="note">
-                    <p class="noteContent">{{.Id}}</p>
-
-                    <p class="noteHeading">{{.Title}}</p>
-                    
-                    <p class="noteContent">{{.Content}}</p>
-                    <a href="/edit/{{ .Id }}"><button >Edit Task</button></a>
-                    <button class="delete-btn" id="{{.Id}}">Delete Task</button>
-                    <hr>
+                
+                    <div>
+                        <hr>
+                        <p class="noteContent">{{.Id}}</p>
+                        
+                        <p class="noteHeading">{{.Title}}</p>
+                        
+                        <p class="noteContent">{{.Content}}</p>
+                        <a href="/edit/{{ .Id }}"><button >Edit Task</button></a>
+                        <button class="delete-btn" id="{{.Id}}">Delete Task</button>
+                        <button class="GetNews-btn" id="{{.Id}}" value="{{.Title}}">Get Hacker News Stories Based on Task Title</button>
+                        <ul  class="News-{{.Id}}" id="unorderList">
+                        {{ if .Task.News}}
+                            {{ range .Task.News }}
+                                {{ if .isMarked }}
+                                    <button>Marked to be read later</button>
+                                {{end}} 
+                        {{end}} 
+                        </ul>
+                        
+                       
                     </div>
                 {{end}} 
             {{else}}
@@ -37,7 +48,6 @@ $(document).ready(function()
         $(".delete-btn").click(function()
         {
             var del_id = $(this).attr('id');
-            console.log("del id "+del_id);
             $.ajax({
                 method:'DELETE',
                 url:'/delete',
@@ -51,5 +61,47 @@ $(document).ready(function()
                 }
             });
         });
+});
+
+
+
+let hmap = new Map()
+
+$(document).ready(function() {
+    $(".GetNews-btn").click(function() {
+        var title = $(this).val(); 
+        var taskId = $(this).attr('id')
+        console.log("taskId "+taskId);
+        $.ajax({
+                method:'GET',
+                url:'/api/task?title='+title,
+                success: function(data)
+                {
+                        console.log(data);
+                        $.each(data, function(k, v) {
+                            hmap[v.Title] = v.Url;
+                            $(".News-"+taskId).append("<li id=\""+taskId+"\">" + v.Title+"</li> <p>"+ v.Url +"</p> <button class=\"useful\">Useful? Mark it to read later</button>")
+                        });
+
+                        // window.location='/';
+                        console.log(hmap)
+                }
+        }).done(function(){
+            $(document).ready(function() {
+                $('button.useful').on('click', function() {
+                    var title = $(this).prev().prev().text();
+                    var url = hmap[title]
+                    console.log("url " + url);
+                    $.ajax({
+                        method:'POST',
+                        url:'/api/task',
+                        data: JSON.stringify({taskId: taskId, url:url})
+                })
+                });
+            });
+        });
     });
+});
+
+
 </script>
