@@ -37,7 +37,7 @@
         url varchar(200),
         taskId INT references task(id),
         FOREIGN KEY (taskId) REFERENCES task(id) ON DELETE CASCADE
-    )
+    );
 
 
     --task     
