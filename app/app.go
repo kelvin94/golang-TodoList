@@ -7,7 +7,7 @@ import (
 
 	myDB "github.com/jyl/golang-TodoList/db"
 	myType "github.com/jyl/golang-TodoList/type"
-
+	"os"
 	// myTypes "github.com/jyl/golang-TodoList/type"
 	"strconv"
 	"html/template"
@@ -16,9 +16,6 @@ import (
 	"sync"
 )
 
-const (
-	templateDirectory = "./public/template/"
-)
  
 var (
 	allFiles 			[]string
@@ -43,6 +40,15 @@ type MyApp struct {
 }
 
 func init() {
+	args := os.Args[:]
+
+	env := args[5]
+	var templateDirectory string
+	if env == "dev" {
+		templateDirectory = "/build/public/template/"
+	} else {
+		templateDirectory = "/build/public/template/"
+	}
 	files, err := ioutil.ReadDir(templateDirectory)
 	if err != nil {
 		log.Fatal(err)

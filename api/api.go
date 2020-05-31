@@ -165,7 +165,9 @@ func (api Api) get(w http.ResponseWriter, r *http.Request, hnDataChan chan []byt
 	// start 10 go routinues that run a select statement to receive messages from hnDataChannel and 
 	// but for now, we only search hacker news for 1 title
 	// for each title... run go getHNApiData()...
-	getHNApiData(hnDataChan, str.String())
+	wg.Add(1)
+	go getHNApiData(hnDataChan, str.String())
+
 	wg.Wait()
 }
 
@@ -201,6 +203,7 @@ func getHNApiData( hnDataChan chan []byte, url string) {
 		data, _ := ioutil.ReadAll(response.Body)
 		hnDataChan <- data;	
 	}
+	wg.Done()
 	
 	
 }

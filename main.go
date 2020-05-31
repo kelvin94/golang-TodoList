@@ -11,9 +11,9 @@ import (
 	// "github.com/jyl/golang-TodoList/structs"
 
 	_ "github.com/lib/pq"
-
+	"os"
 	// myTypes "github.com/jyl/golang-TodoList/type"
-	// "time"
+	"fmt"
 	
 )
 
@@ -42,8 +42,20 @@ func main() {
 	// http.HandleFunc("/add_user", PostAddUser)
 	// http.HandleFunc("/change", PostChange)
 	// http.HandleFunc("/logout", HandleLogout)
-	connStr := "host=localhost user=golang password=golang dbname=golang sslmode=disable"
-    database, err := sql.Open("postgres", connStr)
+	args := os.Args[:]
+	dbname := args[1]
+	dbuser := args[2]
+	dbpwd := args[3]
+	dbhost := args[4]
+	
+	connStr := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", dbhost, dbuser, dbpwd, dbname)
+    log.Println("connStr ",connStr)
+	database, err := sql.Open("postgres", connStr)
+	// database.Exec("DROP TABLE IF EXISTS news;")
+	// database.Exec("CREATE TABLE  IF NOT EXISTS news ( id SERIAL UNIQUE, title varchar(200), url varchar(200), taskId INT references task(id), FOREIGN KEY (taskId) REFERENCES task(id) ON DELETE CASCADE );")
+	// database.Exec("DROP TABLE IF EXISTS task CASCADE;")
+	// database.Exec("CREATE TABLE  IF NOT EXISTS task ( id SERIAL UNIQUE, title varchar(300), content text, created_date timestamp, last_modified_at timestamp, finish_date timestamp, priority integer, category_id INT references category(id), task_status_id INT references status(id), due_date timestamp, task_management_user_id INT references task_management_user(id), hide int );")
+
 	var taskRepository *db.TaskRepository = db.NewPostgresTaskRepository(database)
 	
 	if err != nil {
